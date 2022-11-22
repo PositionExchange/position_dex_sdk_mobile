@@ -16,7 +16,7 @@ num calculateBaseRealFromBaseVirtual(
 
 num calculateBaseVirtualFromQuoteReal(
     num currentPrice, num quoteReal, num priceMin, num priceMax) {
-  return ((quoteReal * (sqrt(currentPrice) - sqrt(priceMin))) /
+  return ((quoteReal * (sqrt(priceMax) - sqrt(currentPrice))) /
       (currentPrice * sqrt(priceMax)));
 }
 
