@@ -341,4 +341,70 @@ void main() {
       expect(expectDataInRange(output.baseFeeReward, 2.5, 0.01), true);
     });
   });
+
+  group("shift-range", () {
+    test("shift-range-ok", () {
+      LiquidityAction liquidity = LiquidityAction();
+
+      ShiftRangeOutput output = liquidity.calculateShiftRange(
+          UserLiquidity(
+              baseAmount: 0,
+              quoteAmount: 0,
+              feeGrowthBase: 0.001010365185377907,
+              feeGrowthQuote: 0.050627750649587265,
+              liquidityAmount: 9.190462263649374,
+              indexPipRange: 1),
+          PairInfo(
+              currentIndexPipRange: 1,
+              currentPrice: 3.8998,
+              basisPoint: basicPoint,
+              pipRange: pipRange,
+              liquidityInfo: {
+                1: LiquidityInfo(
+                    baseReal: 8291.024620192113,
+                    quoteReal: 32333.652872827184,
+                    feeGrowthBase: 0.002452295778829888,
+                    feeGrowthQuote: 0.005508727330270747,
+                    liquidityAmount: 16373.121633621233,
+                    priceMax: 5.9999,
+                    priceMin: 3.0),
+                2: LiquidityInfo(
+                    baseReal: 2486.052940261752,
+                    quoteReal: 14916.317641570417,
+                    feeGrowthBase: 0,
+                    feeGrowthQuote: 0,
+                    liquidityAmount: 6089.561177187104,
+                    priceMax: 8.9999,
+                    priceMin: 6.0),
+                4: LiquidityInfo(
+                    baseReal: 0,
+                    quoteReal: 0,
+                    feeGrowthBase: 0,
+                    feeGrowthQuote: 0,
+                    liquidityAmount: 0,
+                    priceMax: 14.9999,
+                    priceMin: 12),
+                0: LiquidityInfo(
+                    baseReal: 0,
+                    quoteReal: 0,
+                    feeGrowthBase: 0,
+                    feeGrowthQuote: 0,
+                    liquidityAmount: 0,
+                    priceMax: 2.9999,
+                    priceMin: 0.0001),
+              }),
+          0,
+          0,
+          TypeAsset.base);
+
+
+      print(output.receiveQuoteAmount);
+      print(output.receiveBaseAmount);
+      print(output.needQuoteAmount);
+      print(output.needBaseAmount);
+
+      // expect(expectDataInRange(output.quoteFeeReward, 50.5, 0.01), true);
+      // expect(expectDataInRange(output.baseFeeReward, 2.5, 0.01), true);
+    });
+  });
 }

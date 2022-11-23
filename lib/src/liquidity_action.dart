@@ -142,14 +142,16 @@ class LiquidityAction {
           pairInfo);
     } else {
       addLiquidity = calculateAddLiquidity(
-          targetIndexPipRange > userLiquidity.indexPipRange
-              ? userLiquidity.baseAmount
-              : userLiquidity.quoteAmount,
+          targetIndexPipRange > pairInfo.currentIndexPipRange
+              ? baseReceiveEstimate
+              : quoteReceiveEstimate,
           targetIndexPipRange,
-          targetIndexPipRange > userLiquidity.indexPipRange
+          targetIndexPipRange > pairInfo.currentIndexPipRange
               ? TypeAsset.base
               : TypeAsset.quote,
           pairInfo);
+
+
     }
 
     if (removeLiquidity.quoteAmount + collectFee.quoteFeeReward >
