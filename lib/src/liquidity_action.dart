@@ -115,22 +115,42 @@ class LiquidityAction {
     return output;
   }
 
-  ShiftRangeOutput calculateShiftRange(
-      UserLiquidity userLiquidity, PairInfo pairInfo, targetIndexPipRange) {
+  ShiftRangeOutput calculateShiftRange(UserLiquidity userLiquidity,
+      PairInfo pairInfo, num targetIndexPipRange, num amount, TypeAsset type) {
     var output = ShiftRangeOutput.init();
 
     var removeLiquidity = calculateRemoveLiquidity(userLiquidity, pairInfo);
     var collectFee = calculateCollectFee(userLiquidity, pairInfo);
 
-    var addLiquidity = calculateAddLiquidity(
-        targetIndexPipRange > userLiquidity.indexPipRange
-            ? userLiquidity.baseAmount
-            : userLiquidity.quoteAmount,
-        targetIndexPipRange,
-        targetIndexPipRange > userLiquidity.indexPipRange
-            ? TypeAsset.base
-            : TypeAsset.quote,
-        pairInfo);
+    var baseReceiveEstimate =
+        removeLiquidity.baseAmount + collectFee.baseFeeReward;
+    var quoteReceiveEstimate =
+        removeLiquidity.quoteAmount + collectFee.quoteFeeReward;
+
+    AddLiquidityOutput addLiquidity = AddLiquidityOutput.init();
+    if (amount > 0) {
+      if (type == TypeAsset.base) {
+        baseReceiveEstimate += amount;
+      } else {
+        quoteReceiveEstimate += amount;
+      }
+
+      addLiquidity = calculateAddLiquidity(
+          type == TypeAsset.base ? baseReceiveEstimate : quoteReceiveEstimate,
+          targetIndexPipRange,
+          type,
+          pairInfo);
+    } else {
+      addLiquidity = calculateAddLiquidity(
+          targetIndexPipRange > userLiquidity.indexPipRange
+              ? userLiquidity.baseAmount
+              : userLiquidity.quoteAmount,
+          targetIndexPipRange,
+          targetIndexPipRange > userLiquidity.indexPipRange
+              ? TypeAsset.base
+              : TypeAsset.quote,
+          pairInfo);
+    }
 
     if (removeLiquidity.quoteAmount + collectFee.quoteFeeReward >
         addLiquidity.quoteAmount) {
