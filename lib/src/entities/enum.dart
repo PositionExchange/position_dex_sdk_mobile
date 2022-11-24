@@ -4,5 +4,6 @@
 
 enum TypeAsset {
   base,
-  quote
+  quote,
+  none
 }

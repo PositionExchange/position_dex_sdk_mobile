@@ -1,3 +1,5 @@
+import '../../position_dex_sdk.dart';
+
 /// @author Musket
 
 class RemoveLiquidityOutput {
@@ -24,12 +26,14 @@ class ShiftRangeOutput {
   num needQuoteAmount = 0;
   num receiveBaseAmount = 0;
   num receiveQuoteAmount = 0;
+  TypeAsset canDepositAssetType = TypeAsset.none;
 
   ShiftRangeOutput(
       {required this.needBaseAmount,
       required this.needQuoteAmount,
       required this.receiveBaseAmount,
-      required this.receiveQuoteAmount});
+      required this.receiveQuoteAmount,
+      required this.canDepositAssetType});
 
   ShiftRangeOutput.init();
 }

@@ -127,31 +127,38 @@ class LiquidityAction {
     var quoteReceiveEstimate =
         removeLiquidity.quoteAmount + collectFee.quoteFeeReward;
 
+    if ((targetIndexPipRange > pairInfo.currentIndexPipRange &&
+        baseReceiveEstimate == 0)) {
+      throw Exception('Type amount base greater than 0');
+    } else if ((targetIndexPipRange < pairInfo.currentIndexPipRange &&
+        quoteReceiveEstimate == 0)) {
+      throw Exception('Type amount quote greater than 0');
+    }
+
     AddLiquidityOutput addLiquidity = AddLiquidityOutput.init();
     if (amount > 0) {
+      output.canDepositAssetType = type;
       if (type == TypeAsset.base) {
         baseReceiveEstimate += amount;
       } else {
         quoteReceiveEstimate += amount;
       }
-
       addLiquidity = calculateAddLiquidity(
           type == TypeAsset.base ? baseReceiveEstimate : quoteReceiveEstimate,
           targetIndexPipRange,
           type,
           pairInfo);
     } else {
+      output.canDepositAssetType =targetIndexPipRange >= pairInfo.currentIndexPipRange
+          ? TypeAsset.base
+          : TypeAsset.quote;
       addLiquidity = calculateAddLiquidity(
-          targetIndexPipRange > pairInfo.currentIndexPipRange
+          targetIndexPipRange >= pairInfo.currentIndexPipRange
               ? baseReceiveEstimate
               : quoteReceiveEstimate,
           targetIndexPipRange,
-          targetIndexPipRange > pairInfo.currentIndexPipRange
-              ? TypeAsset.base
-              : TypeAsset.quote,
+          output.canDepositAssetType,
           pairInfo);
-
-
     }
 
     if (removeLiquidity.quoteAmount + collectFee.quoteFeeReward >
