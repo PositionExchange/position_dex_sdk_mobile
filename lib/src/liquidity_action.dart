@@ -19,19 +19,19 @@ class LiquidityAction {
       if (type == TypeAsset.base) return output;
       output.quoteAmount = amount;
 
-      pairInfo.currentPrice = liquidityInfo!.priceMax;
+      // pairInfo.currentPrice = liquidityInfo!.priceMax;
 
       quoteReal = calculateQuoteRealFromQuoteVirtual(
-          pairInfo.currentPrice, amount, liquidityInfo!.priceMin);
+          liquidityInfo!.priceMax, amount, liquidityInfo!.priceMin);
     } else if ((targetIndexPipRange > pairInfo.currentIndexPipRange) ||
         (targetIndexPipRange == pairInfo.currentIndexPipRange &&
             pairInfo.currentPrice == liquidityInfo!.priceMin)) {
       if (type == TypeAsset.quote) return output;
       output.baseAmount = amount;
-      pairInfo.currentPrice = liquidityInfo!.priceMin;
+      // pairInfo.currentPrice = liquidityInfo!.priceMin;
 
       baseReal = calculateBaseRealFromBaseVirtual(
-          pairInfo.currentPrice, amount, liquidityInfo!.priceMax);
+          liquidityInfo!.priceMin, amount, liquidityInfo!.priceMax);
     } else if (targetIndexPipRange == pairInfo.currentIndexPipRange) {
       if (type == TypeAsset.base) {
         output.baseAmount = amount;
@@ -127,31 +127,38 @@ class LiquidityAction {
     var quoteReceiveEstimate =
         removeLiquidity.quoteAmount + collectFee.quoteFeeReward;
 
+    if ((targetIndexPipRange > pairInfo.currentIndexPipRange &&
+        baseReceiveEstimate == 0)) {
+      throw Exception('Type amount base greater than 0');
+    } else if ((targetIndexPipRange < pairInfo.currentIndexPipRange &&
+        quoteReceiveEstimate == 0)) {
+      throw Exception('Type amount quote greater than 0');
+    }
+
     AddLiquidityOutput addLiquidity = AddLiquidityOutput.init();
     if (amount > 0) {
+      output.canDepositAssetType = type;
       if (type == TypeAsset.base) {
         baseReceiveEstimate += amount;
       } else {
         quoteReceiveEstimate += amount;
       }
-
       addLiquidity = calculateAddLiquidity(
           type == TypeAsset.base ? baseReceiveEstimate : quoteReceiveEstimate,
           targetIndexPipRange,
           type,
           pairInfo);
     } else {
+      output.canDepositAssetType = targetIndexPipRange >= pairInfo.currentIndexPipRange
+          ? TypeAsset.base
+          : TypeAsset.quote;
       addLiquidity = calculateAddLiquidity(
-          targetIndexPipRange > pairInfo.currentIndexPipRange
+          targetIndexPipRange >= pairInfo.currentIndexPipRange
               ? baseReceiveEstimate
               : quoteReceiveEstimate,
           targetIndexPipRange,
-          targetIndexPipRange > pairInfo.currentIndexPipRange
-              ? TypeAsset.base
-              : TypeAsset.quote,
+          output.canDepositAssetType,
           pairInfo);
-
-
     }
 
     if (removeLiquidity.quoteAmount + collectFee.quoteFeeReward >

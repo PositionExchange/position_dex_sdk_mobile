@@ -1,6 +1,6 @@
 name: position_dex_sdk
 description: SDK for dex 2.0 position exchange.
-version: 1.0.4
+version: 1.0.6
 homepage: https://github.com/PositionExchange/position_dex_sdk_mobile
 
 environment:
