@@ -127,13 +127,7 @@ class LiquidityAction {
     var quoteReceiveEstimate =
         removeLiquidity.quoteAmount + collectFee.quoteFeeReward;
 
-    if ((targetIndexPipRange > pairInfo.currentIndexPipRange &&
-        baseReceiveEstimate == 0)) {
-      throw Exception('Type amount base greater than 0');
-    } else if ((targetIndexPipRange < pairInfo.currentIndexPipRange &&
-        quoteReceiveEstimate == 0)) {
-      throw Exception('Type amount quote greater than 0');
-    }
+
 
     AddLiquidityOutput addLiquidity = AddLiquidityOutput.init();
     if (amount > 0) {
@@ -149,6 +143,13 @@ class LiquidityAction {
           type,
           pairInfo);
     } else {
+      if ((targetIndexPipRange > pairInfo.currentIndexPipRange &&
+          baseReceiveEstimate == 0)) {
+        throw Exception('Type amount base greater than 0');
+      } else if ((targetIndexPipRange < pairInfo.currentIndexPipRange &&
+          quoteReceiveEstimate == 0)) {
+        throw Exception('Type amount quote greater than 0');
+      }
       output.canDepositAssetType = targetIndexPipRange >= pairInfo.currentIndexPipRange
           ? TypeAsset.base
           : TypeAsset.quote;
@@ -161,7 +162,7 @@ class LiquidityAction {
           pairInfo);
     }
 
-    if (removeLiquidity.quoteAmount + collectFee.quoteFeeReward >
+    if (removeLiquidity.quoteAmount + collectFee.quoteFeeReward >=
         addLiquidity.quoteAmount) {
       output.receiveQuoteAmount = removeLiquidity.quoteAmount +
           collectFee.quoteFeeReward -
@@ -170,9 +171,10 @@ class LiquidityAction {
       output.needQuoteAmount = addLiquidity.quoteAmount -
           removeLiquidity.quoteAmount -
           collectFee.quoteFeeReward;
+      output.canDepositAssetType = TypeAsset.quote;
     }
 
-    if (removeLiquidity.baseAmount + collectFee.baseFeeReward >
+    if (removeLiquidity.baseAmount + collectFee.baseFeeReward >=
         addLiquidity.baseAmount) {
       output.receiveBaseAmount = removeLiquidity.baseAmount +
           collectFee.baseFeeReward -
@@ -181,6 +183,7 @@ class LiquidityAction {
       output.needBaseAmount = addLiquidity.baseAmount -
           removeLiquidity.baseAmount -
           collectFee.baseFeeReward;
+      output.canDepositAssetType = TypeAsset.base;
     }
     return output;
   }
