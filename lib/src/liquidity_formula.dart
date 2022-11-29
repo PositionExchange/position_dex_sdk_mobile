@@ -2,7 +2,6 @@
 
 import "dart:math" as math;
 
-
 num calculateQuoteRealFromQuoteVirtual(
     num currentPrice, num quoteVirtual, num priceMin) {
   return ((sqrt(currentPrice) * quoteVirtual) /
@@ -40,6 +39,18 @@ num calculateLiquidity(num amountReal, num price, bool isBase) {
   } else {
     return amountReal / sqrt(price);
   }
+}
+
+num calculateBaseWithPriceWhenBuy(
+    num priceTarget, num baseReal, num currentPrice) {
+  return (baseReal * (sqrt(priceTarget) - sqrt(currentPrice))) /
+      sqrt(currentPrice);
+}
+
+num calculateBaseWithPriceWhenSell(
+    num priceTarget, num quoteReal, num currentPrice) {
+  return (quoteReal * (sqrt(currentPrice) - sqrt(priceTarget))) /
+      (currentPrice * sqrt(priceTarget));
 }
 
 List calculatePriceMaxAndMin(num index, num pipRange, num basisPoint) {
