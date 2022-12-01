@@ -61,9 +61,13 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
   num priceSpace = liquidityPair.pipRange / liquidityPair.basisPoint;
   num nextPoint = -1;
   num indexPipRangeStep = liquidityPair.currentIndexPipRange;
+  num countSkipIndex = 0;
 
-  if (pointPrice == toNum(orders[0][0])) {
-    depth.add(orders[0]);
+
+  if (orders.isNotEmpty) {
+    if (pointPrice == toNum(orders[0][0])) {
+      depth.add(orders[0]);
+    }
   }
 
   while (true) {
@@ -80,17 +84,35 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
         liquidityPair.basisPoint,
         nextPoint.nextPrice);
 
-    resultOrder.order[1] =
-        (toNum(resultOrder.order[1]) + nextPoint.order.length > 0
-                ? toNum(nextPoint.order[1])
-                : 0)
-            .toString();
-    depth.add(resultOrder.order);
+    if (toNum(resultOrder.order[0]) != 0) {
+      resultOrder.order[1] =
+          (toNum(resultOrder.order[1]) + nextPoint.order.length > 0
+              ? toNum(nextPoint.order[1])
+              : 0)
+              .toString();
+      depth.add(resultOrder.order);
 
-    pointPrice = nextPoint.nextPrice;
-    indexPipRangeStep = resultOrder.nextIndexPipRange;
+      pointPrice = nextPoint.nextPrice;
+      indexPipRangeStep = resultOrder.nextIndexPipRange;
+    }else {
 
-    if (depth.length >= depthSize || resultOrder.nextIndexPipRange < 0) {
+      if (nextPoint.order.isNotEmpty){
+        depth.add(nextPoint.order);
+      }
+
+      pointPrice = nextPoint.nextPrice;
+
+      num indexPipRangeTemp = (nextPoint.nextPrice *  liquidityPair.basisPoint / liquidityPair.basisPoint ).floor();
+
+      if (indexPipRangeTemp != indexPipRangeStep) {
+        countSkipIndex++;
+        indexPipRangeStep = indexPipRangeTemp;
+      }
+
+    }
+
+
+    if (depth.length >= depthSize || resultOrder.nextIndexPipRange < 0 || countSkipIndex >2 || pointPrice < 0 ) {
       break;
     }
   }
@@ -109,6 +131,7 @@ NexPoint _findNextPointPriceAsk(
   if (order.isEmpty) {
     return NexPoint(nextPrice: pointPrice + priceSpace, order: []);
   } else {
+    orders = orders.removeAt(0).cast<List<String>>().toList();
     return NexPoint(nextPrice: toNum(order[0]), order: order);
   }
 }
@@ -124,6 +147,7 @@ NexPoint _findNextPointPriceBid(
   if (order.isEmpty) {
     return NexPoint(nextPrice: pointPrice + priceSpace, order: []);
   } else {
+    orders = orders.removeAt(0).cast<List<String>>().toList();
     return NexPoint(nextPrice: toNum(order[0]), order: order);
   }
 }
@@ -211,6 +235,10 @@ OrderAmm calculateOrderAmm(
     var liquidityIndex = liquidityIndexBySide
         .firstWhere((element) => toNum(element[0]) == i)
         .toList();
+
+    if (liquidityIndex.isEmpty) {
+      return OrderAmm(order: ['0', '0'], nextIndexPipRange: i);
+    }
 
     var priceMaxAndMin = calculatePriceMaxAndMin(i, pipRange, basisPoint);
 

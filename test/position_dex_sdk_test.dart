@@ -115,9 +115,9 @@ void main() {
                     feeGrowthQuote: 0),
               }));
 
-      print(output.baseAmount);
-      print(output.quoteAmount);
-      print(output.liquidityAmount);
+      // print(output.baseAmount);
+      // print(output.quoteAmount);
+      // print(output.liquidityAmount);
       expect(expectDataInRange(output.baseAmount, 15, 0.01), true);
       expect(expectDataInRange(output.quoteAmount, 0, 0.01), true);
       expect(
@@ -397,7 +397,64 @@ void main() {
           0,
           TypeAsset.base);
 
+      print(output.receiveQuoteAmount);
+      print(output.receiveBaseAmount);
+      print(output.needQuoteAmount);
+      print(output.needBaseAmount);
 
+      // expect(expectDataInRange(output.quoteFeeReward, 50.5, 0.01), true);
+      // expect(expectDataInRange(output.baseFeeReward, 2.5, 0.01), true);
+    });
+    test("shift-range", () {
+      LiquidityAction liquidity = LiquidityAction();
+
+      ShiftRangeOutput output = liquidity.calculateShiftRange(
+          UserLiquidity(
+              baseAmount: 0,
+              quoteAmount: 0,
+              feeGrowthBase: 0,
+              feeGrowthQuote: 0,
+              liquidityAmount: 379.779735,
+              indexPipRange: 0),
+          PairInfo(
+              currentIndexPipRange: 2,
+              currentPrice: 6.9917,
+              basisPoint: basicPoint,
+              pipRange: pipRange,
+              liquidityInfo: {
+                0: LiquidityInfo(
+                  baseReal: 219.26593245125028,
+                  quoteReal: 657.7977973537453,
+                  feeGrowthQuote: 0.0,
+                  feeGrowthBase: 0.0,
+                  liquidityAmount: 379.77973537452937,
+                  priceMax: 3.0,
+                  priceMin: 0.0001,
+                ),
+                2: LiquidityInfo(
+                  baseReal: 1343.070904401152,
+                  quoteReal: 9390.441686293954,
+                  feeGrowthQuote: 0.0,
+                  feeGrowthBase: 0.000027055294838251,
+                  liquidityAmount: 3551.3418602462225,
+                  priceMax: 3.0,
+                  priceMin: 0.0001,
+                ),
+                3: LiquidityInfo(
+                  baseReal: 918.1092269470731,
+                  quoteReal: 8262.98304252366,
+                  feeGrowthQuote: 0.0,
+                  feeGrowthBase: 0.0,
+                  liquidityAmount: 2754.3276808412197,
+                  priceMax: 11.9999,
+                  priceMin: 9.0,
+                ),
+              }),
+          3,
+          23,
+          TypeAsset.base);
+
+      print("*******");
       print(output.receiveQuoteAmount);
       print(output.receiveBaseAmount);
       print(output.needQuoteAmount);
