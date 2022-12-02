@@ -5,6 +5,7 @@ import '../position_dex_sdk.dart';
 class LiquidityPair {
   num currentIndexPipRange = 0;
   num pipRange = 0;
+  num pipSpace = 0;
   num basisPoint = 0;
   num currentPip = 0;
   List<List<String>> liquidityIndex = [];
@@ -12,6 +13,7 @@ class LiquidityPair {
   LiquidityPair(
       {required this.currentIndexPipRange,
       required this.pipRange,
+      required this.pipSpace,
       required this.basisPoint,
       required this.currentPip,
       required this.liquidityIndex});
@@ -58,11 +60,10 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
   }
 
   num pointPrice = liquidityPair.currentPip / liquidityPair.basisPoint;
-  num priceSpace = liquidityPair.pipRange / liquidityPair.basisPoint;
+  num priceSpace = liquidityPair.pipSpace / liquidityPair.basisPoint;
   num nextPoint = -1;
   num indexPipRangeStep = liquidityPair.currentIndexPipRange;
   num countSkipIndex = 0;
-
 
   if (orders.isNotEmpty) {
     if (pointPrice == toNum(orders[0][0])) {
@@ -87,32 +88,35 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
     if (toNum(resultOrder.order[0]) != 0) {
       resultOrder.order[1] =
           (toNum(resultOrder.order[1]) + nextPoint.order.length > 0
-              ? toNum(nextPoint.order[1])
-              : 0)
+                  ? toNum(nextPoint.order[1])
+                  : 0)
               .toString();
       depth.add(resultOrder.order);
 
       pointPrice = nextPoint.nextPrice;
       indexPipRangeStep = resultOrder.nextIndexPipRange;
-    }else {
-
-      if (nextPoint.order.isNotEmpty){
+    } else {
+      if (nextPoint.order.isNotEmpty) {
         depth.add(nextPoint.order);
       }
 
       pointPrice = nextPoint.nextPrice;
 
-      num indexPipRangeTemp = (nextPoint.nextPrice *  liquidityPair.basisPoint / liquidityPair.basisPoint ).floor();
+      num indexPipRangeTemp = (nextPoint.nextPrice *
+              liquidityPair.basisPoint /
+              liquidityPair.basisPoint)
+          .floor();
 
       if (indexPipRangeTemp != indexPipRangeStep) {
         countSkipIndex++;
         indexPipRangeStep = indexPipRangeTemp;
       }
-
     }
 
-
-    if (depth.length >= depthSize || resultOrder.nextIndexPipRange < 0 || countSkipIndex >2 || pointPrice < 0 ) {
+    if (depth.length >= depthSize ||
+        resultOrder.nextIndexPipRange < 0 ||
+        countSkipIndex > 2 ||
+        pointPrice < 0) {
       break;
     }
   }
