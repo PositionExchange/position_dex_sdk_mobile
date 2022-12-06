@@ -86,17 +86,17 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
         nextPoint.nextPrice);
 
     if (toNum(resultOrder.order[0]) != 0) {
-      resultOrder.order[1] =
-          (toNum(resultOrder.order[1]) + nextPoint.order.length > 0
-                  ? toNum(nextPoint.order[1])
-                  : 0)
-              .toString();
+      var limitQuantity =
+          nextPoint.order.isNotEmpty ? toNum(nextPoint.order[1]) : 0;
+      var temp = toNum(resultOrder.order[1]) + limitQuantity;
+      resultOrder.order[1] = temp.toString();
+
       depth.add(resultOrder.order);
 
       pointPrice = nextPoint.nextPrice;
       indexPipRangeStep = resultOrder.nextIndexPipRange;
     } else {
-      if (nextPoint.order.isNotEmpty) {
+      if (toNum(nextPoint.order[0]) != 0) {
         depth.add(nextPoint.order);
       }
 
@@ -127,15 +127,19 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
 NexPoint _findNextPointPriceAsk(
     num pointPrice, num priceSpace, List<List<String>> orders) {
   var order = orders
-      .firstWhere((element) =>
-          toNum(element[0]) > pointPrice &&
-          toNum(element[0]) <= pointPrice + priceSpace)
+      .firstWhere(
+          (element) =>
+              toNum(element[0]) > pointPrice &&
+              toNum(element[0]) <= pointPrice + priceSpace,
+          orElse: () => ['0', '0'].toList())
       .toList();
 
-  if (order.isEmpty) {
+  if (toNum(order[0]) == 0) {
     return NexPoint(nextPrice: pointPrice + priceSpace, order: []);
   } else {
-    orders = orders.removeAt(0).cast<List<String>>().toList();
+    if (orders.isNotEmpty) {
+      orders = orders.removeAt(0).cast<List<String>>();
+    }
     return NexPoint(nextPrice: toNum(order[0]), order: order);
   }
 }
@@ -143,15 +147,16 @@ NexPoint _findNextPointPriceAsk(
 NexPoint _findNextPointPriceBid(
     num pointPrice, num priceSpace, List<List<String>> orders) {
   var order = orders
-      .firstWhere((element) =>
-          toNum(element[0]) < pointPrice &&
-          toNum(element[0]) <= pointPrice - priceSpace)
+      .firstWhere(
+          (element) =>
+              toNum(element[0]) < pointPrice &&
+              toNum(element[0]) >= pointPrice - priceSpace,
+          orElse: () => ['0', '0'].toList())
       .toList();
 
-  if (order.isEmpty) {
-    return NexPoint(nextPrice: pointPrice + priceSpace, order: []);
+  if (toNum(order[0]) == 0) {
+    return NexPoint(nextPrice: pointPrice - priceSpace, order: []);
   } else {
-    orders = orders.removeAt(0).cast<List<String>>().toList();
     return NexPoint(nextPrice: toNum(order[0]), order: order);
   }
 }
@@ -162,8 +167,8 @@ List<List<String>> _groupDecimal(num basisPoint, List<List<String>> depth,
 
   List<List<String>> groupDepth = [];
 
-  num fixedRound = log(groupLevel) / ln10;
-  num maxFixedRound = log(basisPoint) / ln10;
+  num fixedRound = log(groupLevel) ~/ ln10;
+  num maxFixedRound = log(basisPoint) ~/ ln10;
 
   num spacingGroup = (groupLevel * multiplier / basisPoint);
   List<String> group = ["0", "0"];
@@ -187,12 +192,19 @@ List<List<String>> _groupDecimal(num basisPoint, List<List<String>> depth,
     }
 
     if (newGroup) {
-      if (fixedRound <= maxFixedRound) {
+      if (fixedRound < maxFixedRound) {
         startPrice = toNum(toNum(order[0]).toStringAsFixed(
             int.parse((maxFixedRound - fixedRound).toString())));
       } else {
-        startPrice = toNum(order[0]) -
-            (toNum(order[0]) % toNum(spacingGroup.toString()));
+
+        if (type == TypeDepth.ask){
+
+          startPrice = toNum(order[0]) -
+              (toNum(order[0]) % toNum(spacingGroup.toString()));
+        }else {
+          startPrice = toNum(order[0]) -
+              (toNum(order[0]) % toNum(spacingGroup.toString()))+spacingGroup;
+        }
       }
 
       endPrice = type == TypeDepth.ask
@@ -217,7 +229,7 @@ List<List<String>> _groupDecimal(num basisPoint, List<List<String>> depth,
     }
   }
 
-  return [];
+  return groupDepth;
 }
 
 OrderAmm calculateOrderAmm(
@@ -236,9 +248,9 @@ OrderAmm calculateOrderAmm(
   num lastPipIndex = 0;
 
   for (var i = currentIndexPipRange;;) {
-    var liquidityIndex = liquidityIndexBySide
-        .firstWhere((element) => toNum(element[0]) == i)
-        .toList();
+    var liquidityIndex = liquidityIndexBySide.firstWhere(
+        (element) => toNum(element[0]) == i,
+        orElse: () => [].cast<String>());
 
     if (liquidityIndex.isEmpty) {
       return OrderAmm(order: ['0', '0'], nextIndexPipRange: i);
@@ -288,6 +300,7 @@ OrderAmm calculateOrderAmm(
       order: [nextPriceStep.toString(), totalVolume.toString()],
       nextIndexPipRange: lastPipIndex);
 }
+
 
 num toNum(String str) {
   return num.parse(str);
