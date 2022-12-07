@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:decimal/decimal.dart';
 
 import '../position_dex_sdk.dart';
 
@@ -126,36 +127,38 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
 
 NexPoint _findNextPointPriceAsk(
     num pointPrice, num priceSpace, List<List<String>> orders) {
+
+  var limit = d(pointPrice.toString())  + d(priceSpace.toString());
+
   var order = orders
       .firstWhere(
           (element) =>
               toNum(element[0]) > pointPrice &&
-              toNum(element[0]) <= pointPrice + priceSpace,
+              toNum(element[0]) <= toNum(limit.toString()),
           orElse: () => ['0', '0'].toList())
       .toList();
 
   if (toNum(order[0]) == 0) {
-    return NexPoint(nextPrice: pointPrice + priceSpace, order: []);
+    return NexPoint(nextPrice:toNum(limit.toString()), order: ['0', '0']);
   } else {
-    if (orders.isNotEmpty) {
-      orders = orders.removeAt(0).cast<List<String>>();
-    }
     return NexPoint(nextPrice: toNum(order[0]), order: order);
   }
 }
 
 NexPoint _findNextPointPriceBid(
     num pointPrice, num priceSpace, List<List<String>> orders) {
+
+  var limit = d(pointPrice.toString())  - d(priceSpace.toString());
   var order = orders
       .firstWhere(
           (element) =>
               toNum(element[0]) < pointPrice &&
-              toNum(element[0]) >= pointPrice - priceSpace,
+              toNum(element[0]) >= toNum(limit.toString()),
           orElse: () => ['0', '0'].toList())
       .toList();
 
   if (toNum(order[0]) == 0) {
-    return NexPoint(nextPrice: pointPrice - priceSpace, order: []);
+    return NexPoint(nextPrice: toNum(limit.toString()), order: ['0', '0']);
   } else {
     return NexPoint(nextPrice: toNum(order[0]), order: order);
   }
@@ -167,8 +170,8 @@ List<List<String>> _groupDecimal(num basisPoint, List<List<String>> depth,
 
   List<List<String>> groupDepth = [];
 
-  num fixedRound = log(groupLevel) ~/ ln10;
-  num maxFixedRound = log(basisPoint) ~/ ln10;
+  num fixedRound = groupLevel.toString().length -1; //log(groupLevel) ~/ ln10;
+  num maxFixedRound = basisPoint.toString().length -1;//log(basisPoint) ~/ ln10;
 
   num spacingGroup = (groupLevel * multiplier / basisPoint);
   List<String> group = ["0", "0"];
@@ -193,8 +196,18 @@ List<List<String>> _groupDecimal(num basisPoint, List<List<String>> depth,
 
     if (newGroup) {
       if (fixedRound < maxFixedRound) {
-        startPrice = toNum(toNum(order[0]).toStringAsFixed(
-            int.parse((maxFixedRound - fixedRound).toString())));
+        if (type == TypeDepth.ask){
+
+
+          startPrice = toNum(toNum(order[0]).toStringAsFixed(
+              int.parse((maxFixedRound - fixedRound).toString())));
+        }else {
+          var s = d(toNum(order[0]).toStringAsFixed(
+              int.parse((maxFixedRound - fixedRound).toString()))) + d(spacingGroup.toString());
+
+          startPrice = toNum(s.toString());
+        }
+
       } else {
 
         if (type == TypeDepth.ask){
@@ -202,14 +215,15 @@ List<List<String>> _groupDecimal(num basisPoint, List<List<String>> depth,
           startPrice = toNum(order[0]) -
               (toNum(order[0]) % toNum(spacingGroup.toString()));
         }else {
-          startPrice = toNum(order[0]) -
-              (toNum(order[0]) % toNum(spacingGroup.toString()))+spacingGroup;
+          var s = d(order[0]) -
+              d( (toNum(order[0]) % toNum(spacingGroup.toString())).toString()) + d(spacingGroup.toString());
+          startPrice = toNum(s.toString());
         }
       }
 
       endPrice = type == TypeDepth.ask
-          ? startPrice + spacingGroup
-          : startPrice - spacingGroup;
+          ? toNum((d(startPrice.toString()) + d(spacingGroup.toString())).toString())
+          : toNum((d(startPrice.toString()) - d(spacingGroup.toString())).toString());
       group[0] = endPrice.toString();
       newGroup = false;
     }
@@ -305,3 +319,4 @@ OrderAmm calculateOrderAmm(
 num toNum(String str) {
   return num.parse(str);
 }
+final d = (String s) => Decimal.parse(s);
