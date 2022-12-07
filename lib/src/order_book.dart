@@ -80,7 +80,7 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
     OrderAmm resultOrder = calculateOrderAmm(
         typeDepth,
         pointPrice,
-        liquidityPair.currentIndexPipRange,
+        indexPipRangeStep,
         liquidityIndexBySide,
         liquidityPair.pipRange,
         liquidityPair.basisPoint,
@@ -102,7 +102,6 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
       }
 
       pointPrice = nextPoint.nextPrice;
-
       num indexPipRangeTemp = (nextPoint.nextPrice *
               liquidityPair.basisPoint /
               liquidityPair.basisPoint)
@@ -128,7 +127,7 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
 NexPoint _findNextPointPriceAsk(
     num pointPrice, num priceSpace, List<List<String>> orders) {
 
-  var limit = d(pointPrice.toString())  + d(priceSpace.toString());
+  var limit = d(pointPrice.toString()) + d(priceSpace.toString());
 
   var order = orders
       .firstWhere(
@@ -179,9 +178,6 @@ List<List<String>> _groupDecimal(num basisPoint, List<List<String>> depth,
   num endPrice = 0;
   bool newGroup = true;
 
-  // let primitivePrice = depth[0][0].toFixed(3);
-  // startPrice = BigNumber(primitivePrice);
-  // endPrice = BigNumber(primitivePrice).plus(spacingGroup);
   for (int i = 0; i < depth.length; i++) {
     List<String> order = depth[i];
     num priceOrder = toNum(order[0]);
@@ -197,21 +193,14 @@ List<List<String>> _groupDecimal(num basisPoint, List<List<String>> depth,
     if (newGroup) {
       if (fixedRound < maxFixedRound) {
         if (type == TypeDepth.ask){
-
-
-          startPrice = toNum(toNum(order[0]).toStringAsFixed(
-              int.parse((maxFixedRound - fixedRound).toString())));
+          startPrice = roundDown( toNum(order[0]), maxFixedRound.toInt() - fixedRound.toInt() );
         }else {
-          var s = d(toNum(order[0]).toStringAsFixed(
-              int.parse((maxFixedRound - fixedRound).toString()))) + d(spacingGroup.toString());
-
-          startPrice = toNum(s.toString());
+          var s = d(roundDown(toNum(order[0]), maxFixedRound.toInt() -
+              fixedRound.toInt()).toString()) + d(spacingGroup.toString());
+          startPrice =  toNum(s.toString());
         }
-
       } else {
-
         if (type == TypeDepth.ask){
-
           startPrice = toNum(order[0]) -
               (toNum(order[0]) % toNum(spacingGroup.toString()));
         }else {
@@ -229,10 +218,10 @@ List<List<String>> _groupDecimal(num basisPoint, List<List<String>> depth,
     }
 
     if ((startPrice <= priceOrder &&
-            endPrice > priceOrder &&
+            endPrice >= priceOrder &&
             type == TypeDepth.ask) ||
         (startPrice >= priceOrder &&
-            endPrice < priceOrder &&
+            endPrice <= priceOrder &&
             type == TypeDepth.bid)) {
       group[1] = (toNum(group[1]) + toNum(order[1])).toString();
     }
@@ -281,7 +270,7 @@ OrderAmm calculateOrderAmm(
 
     if (startIntoIndex) {
       pointPriceStep =
-          type == TypeDepth.ask ? priceMaxAndMin[0] : priceMaxAndMin[1];
+          type == TypeDepth.ask ?priceMaxAndMin[1]: priceMaxAndMin[0] ;
       startIntoIndex = false;
     }
 
@@ -320,3 +309,12 @@ num toNum(String str) {
   return num.parse(str);
 }
 final d = (String s) => Decimal.parse(s);
+
+
+num roundDown(num number ,int precision) {
+  final isNegative = number.isNegative;
+  final mod = pow(10.0, precision);
+  final roundDown = ((number.abs() * mod).floor()) / mod;
+
+  return isNegative ? -roundDown : roundDown;
+}
