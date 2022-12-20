@@ -44,7 +44,7 @@ num calculateLiquidity(num amountReal, num price, bool isBase) {
 num calculateBaseWithPriceWhenBuy(
     num priceTarget, num baseReal, num currentPrice) {
   return (baseReal * (sqrt(priceTarget) - sqrt(currentPrice))) /
-      sqrt(currentPrice);
+      sqrt(priceTarget);
 }
 
 num calculateBaseWithPriceWhenSell(
