@@ -45,11 +45,15 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
   var liquidityIndexBySide = typeDepth == TypeDepth.ask
       ? liquidityPair.liquidityIndex
           .where((element) =>
-              toNum(element[0]) >= liquidityPair.currentIndexPipRange)
+              toNum(element[0]) >= liquidityPair.currentIndexPipRange &&
+              toNum(element[1]) > 0 &&
+              toNum(element[2]) > 0)
           .toList()
       : liquidityPair.liquidityIndex
           .where((element) =>
-              toNum(element[0]) <= liquidityPair.currentIndexPipRange)
+              toNum(element[0]) <= liquidityPair.currentIndexPipRange &&
+              toNum(element[1]) > 0 &&
+              toNum(element[2]) > 0)
           .toList();
 
   if (typeDepth == TypeDepth.ask) {
@@ -86,7 +90,7 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
         liquidityPair.basisPoint,
         nextPoint.nextPrice);
 
-    if (toNum(resultOrder.order[0]) != 0) {
+    if (toNum(resultOrder.order[0]) != 0 && toNum(resultOrder.order[1]) > 0) {
       var limitQuantity =
           nextPoint.order.isNotEmpty ? toNum(nextPoint.order[1]) : 0;
       var temp = toNum(resultOrder.order[1]) + limitQuantity;
@@ -126,7 +130,6 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
 
 NexPoint _findNextPointPriceAsk(
     num pointPrice, num priceSpace, List<List<String>> orders) {
-
   var limit = d(pointPrice.toString()) + d(priceSpace.toString());
 
   var order = orders
@@ -138,7 +141,7 @@ NexPoint _findNextPointPriceAsk(
       .toList();
 
   if (toNum(order[0]) == 0) {
-    return NexPoint(nextPrice:toNum(limit.toString()), order: ['0', '0']);
+    return NexPoint(nextPrice: toNum(limit.toString()), order: ['0', '0']);
   } else {
     return NexPoint(nextPrice: toNum(order[0]), order: order);
   }
@@ -146,8 +149,7 @@ NexPoint _findNextPointPriceAsk(
 
 NexPoint _findNextPointPriceBid(
     num pointPrice, num priceSpace, List<List<String>> orders) {
-
-  var limit = d(pointPrice.toString())  - d(priceSpace.toString());
+  var limit = d(pointPrice.toString()) - d(priceSpace.toString());
   var order = orders
       .firstWhere(
           (element) =>
@@ -169,8 +171,9 @@ List<List<String>> _groupDecimal(num basisPoint, List<List<String>> depth,
 
   List<List<String>> groupDepth = [];
 
-  num fixedRound = groupLevel.toString().length -1; //log(groupLevel) ~/ ln10;
-  num maxFixedRound = basisPoint.toString().length -1;//log(basisPoint) ~/ ln10;
+  num fixedRound = groupLevel.toString().length - 1; //log(groupLevel) ~/ ln10;
+  num maxFixedRound =
+      basisPoint.toString().length - 1; //log(basisPoint) ~/ ln10;
 
   num spacingGroup = (groupLevel * multiplier / basisPoint);
   List<String> group = ["0", "0"];
@@ -192,27 +195,33 @@ List<List<String>> _groupDecimal(num basisPoint, List<List<String>> depth,
 
     if (newGroup) {
       if (fixedRound < maxFixedRound) {
-        if (type == TypeDepth.ask){
-          startPrice = roundDown( toNum(order[0]), maxFixedRound.toInt() - fixedRound.toInt() );
-        }else {
-          var s = d(roundDown(toNum(order[0]), maxFixedRound.toInt() -
-              fixedRound.toInt()).toString()) + d(spacingGroup.toString());
-          startPrice =  toNum(s.toString());
+        if (type == TypeDepth.ask) {
+          startPrice = roundDown(
+              toNum(order[0]), maxFixedRound.toInt() - fixedRound.toInt());
+        } else {
+          var s = d(roundDown(toNum(order[0]),
+                      maxFixedRound.toInt() - fixedRound.toInt())
+                  .toString()) +
+              d(spacingGroup.toString());
+          startPrice = toNum(s.toString());
         }
       } else {
-        if (type == TypeDepth.ask){
+        if (type == TypeDepth.ask) {
           startPrice = toNum(order[0]) -
               (toNum(order[0]) % toNum(spacingGroup.toString()));
-        }else {
+        } else {
           var s = d(order[0]) -
-              d( (toNum(order[0]) % toNum(spacingGroup.toString())).toString()) + d(spacingGroup.toString());
+              d((toNum(order[0]) % toNum(spacingGroup.toString())).toString()) +
+              d(spacingGroup.toString());
           startPrice = toNum(s.toString());
         }
       }
 
       endPrice = type == TypeDepth.ask
-          ? toNum((d(startPrice.toString()) + d(spacingGroup.toString())).toString())
-          : toNum((d(startPrice.toString()) - d(spacingGroup.toString())).toString());
+          ? toNum((d(startPrice.toString()) + d(spacingGroup.toString()))
+              .toString())
+          : toNum((d(startPrice.toString()) - d(spacingGroup.toString()))
+              .toString());
       group[0] = endPrice.toString();
       newGroup = false;
     }
@@ -252,11 +261,13 @@ OrderAmm calculateOrderAmm(
 
   for (var i = currentIndexPipRange;;) {
     var liquidityIndex = liquidityIndexBySide.firstWhere(
-        (element) => toNum(element[0]) == i,
+        (element) =>
+            toNum(element[0]) == i,
         orElse: () => [].cast<String>());
 
     if (liquidityIndex.isEmpty) {
-      return OrderAmm(order: ['0', '0'], nextIndexPipRange: i);
+      liquidityIndex = [i.toString(), "0", "0"];
+      // return OrderAmm(order: ['0', '0'], nextIndexPipRange: i);
     }
 
     var priceMaxAndMin = calculatePriceMaxAndMin(i, pipRange, basisPoint);
@@ -270,7 +281,7 @@ OrderAmm calculateOrderAmm(
 
     if (startIntoIndex) {
       pointPriceStep =
-          type == TypeDepth.ask ?priceMaxAndMin[1]: priceMaxAndMin[0] ;
+          type == TypeDepth.ask ? priceMaxAndMin[1] : priceMaxAndMin[0];
       startIntoIndex = false;
     }
 
@@ -304,14 +315,13 @@ OrderAmm calculateOrderAmm(
       nextIndexPipRange: lastPipIndex);
 }
 
-
 num toNum(String str) {
   return num.parse(str);
 }
+
 final d = (String s) => Decimal.parse(s);
 
-
-num roundDown(num number ,int precision) {
+num roundDown(num number, int precision) {
   final isNegative = number.isNegative;
   final mod = pow(10.0, precision);
   final roundDown = ((number.abs() * mod).floor()) / mod;
