@@ -108,13 +108,14 @@ List<List<String>> generateDepth(List<List<String>> orders, TypeDepth typeDepth,
       pointPrice = nextPoint.nextPrice;
       num indexPipRangeTemp = (nextPoint.nextPrice *
               liquidityPair.basisPoint /
-              liquidityPair.basisPoint)
+              liquidityPair.pipRange)
           .floor();
 
       if (indexPipRangeTemp != indexPipRangeStep) {
         countSkipIndex++;
-        indexPipRangeStep = indexPipRangeTemp;
       }
+      indexPipRangeStep = indexPipRangeTemp;
+
     }
 
     if (depth.length >= depthSize ||
